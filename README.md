@@ -1,2 +1,0 @@
-# pinger
-Refresh a URL
