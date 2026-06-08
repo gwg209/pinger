@@ -81,18 +81,25 @@
             flex-grow: 1;
             padding: 0 20px; 
             font-size: 14px; 
-            background-color: #007bff; 
             color: white; 
             border: none; 
             border-radius: 4px; 
             cursor: pointer; 
-            font-weight: bold; 
+            font-weight: bold;
             height: 40px;
             white-space: nowrap;
+            transition: background-color 0.2s;
         }
-        button:hover { 
-            background-color: #0056b3; 
-        }
+        /* State-based button colors */
+        .btn-launch { background-color: #007bff; }
+        .btn-launch:hover { background-color: #0056b3; }
+        
+        .btn-pause { background-color: #ffc107; color: #212529; }
+        .btn-pause:hover { background-color: #e0a800; }
+        
+        .btn-resume { background-color: #28a745; }
+        .btn-resume:hover { background-color: #218838; }
+
         .status-bar { 
             display: flex;
             justify-content: space-between;
@@ -160,7 +167,7 @@
                 <input type="checkbox" id="randomizeCheck" checked> Randomize
             </label>
 
-            <button id="startBtn">Launch</button>
+            <button id="startBtn" class="btn-launch">Launch</button>
         </div>
     </div>
 
@@ -181,6 +188,9 @@
     let targetUrl = '';
     let pingCount = 0;
     let startTimeString = '--';
+    
+    // State machine tracking: 'idle', 'active', 'paused'
+    let currentState = 'idle';
 
     const urlInput = document.getElementById('urlInput');
     const minutesInput = document.getElementById('minutesInput');
@@ -218,6 +228,32 @@
         metaText.textContent = `Started: ${startTimeString} | Total Pings: ${pingCount} | Duration: ${formatDuration(totalSecondsElapsed)}`;
     }
 
+    function updateButtonState(state) {
+        currentState = state;
+        startBtn.className = ''; // Reset CSS classes
+        
+        if (state === 'active') {
+            startBtn.textContent = 'Pause';
+            startBtn.classList.add('btn-pause');
+        } else if (state === 'paused') {
+            startBtn.textContent = 'Resume';
+            startBtn.classList.add('btn-resume');
+        } else {
+            startBtn.textContent = 'Launch';
+            startBtn.classList.add('btn-launch');
+        }
+    }
+
+    function handleButtonClick() {
+        if (currentState === 'idle') {
+            startPinger();
+        } else if (currentState === 'active') {
+            pausePinger();
+        } else if (currentState === 'paused') {
+            resumePinger();
+        }
+    }
+
     function startPinger() {
         popupWarning.style.display = 'none';
         
@@ -238,8 +274,6 @@
             urlInput.value = targetUrl;
         }
 
-        if (countdownInterval) clearInterval(countdownInterval);
-
         pingCount = 0;
         totalSecondsElapsed = 0;
         startTimeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -256,15 +290,42 @@
         }
 
         secondsRemaining = getNextIntervalSeconds();
-
         statusText.textContent = `Status: Page opened. Next cycle targets ${secondsRemaining}s`;
         countdownText.textContent = `${secondsRemaining}s`;
         updateMetaDisplay();
+        
+        updateButtonState('active');
+        runTimerLoop();
+    }
+
+    function pausePinger() {
+        if (countdownInterval) clearInterval(countdownInterval);
+        statusText.textContent = "Status: Paused.";
+        updateButtonState('paused');
+    }
+
+    function resumePinger() {
+        // Confirm target window is still around before resuming
+        if (!targetWindow || targetWindow.closed) {
+            statusText.textContent = "Status: Target window closed. Restart required.";
+            countdownText.textContent = "--s";
+            updateButtonState('idle');
+            return;
+        }
+        
+        statusText.textContent = `Status: Resumed. Next cycle targets ${secondsRemaining}s`;
+        updateButtonState('active');
+        runTimerLoop();
+    }
+
+    function runTimerLoop() {
+        if (countdownInterval) clearInterval(countdownInterval);
 
         countdownInterval = setInterval(() => {
             if (!targetWindow || targetWindow.closed) {
                 statusText.textContent = "Status: Target window closed.";
                 countdownText.textContent = "--s";
+                updateButtonState('idle');
                 clearInterval(countdownInterval);
                 return;
             }
@@ -287,8 +348,7 @@
         }, 1000);
     }
 
-    startBtn.addEventListener('click', startPinger);
+    startBtn.addEventListener('click', handleButtonClick);
 </script>
-
 </body>
 </html>
