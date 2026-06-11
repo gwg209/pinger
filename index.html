@@ -11,7 +11,7 @@
             background-color: #f0f0f0; 
         }
         .container { 
-            max-width: 500px; 
+            max-width: 500px; /* Slightly widened to handle the new input cleanly */
             margin: 0 auto; 
             padding: 20px; 
             background: white; 
@@ -31,7 +31,7 @@
         }
         .sub-row {
             display: flex;
-            gap: 12px;
+            gap: 15px;
             align-items: flex-end;
         }
         .input-group { 
@@ -42,24 +42,22 @@
         .url-group {
             width: 100%;
         }
-        /* Specific element widths tailored to labels */
         .timer-group {
-            width: 75px;
+            width: 95px; /* Widened slightly to accommodate "Ping (min):" smoothly */
         }
         .duration-group {
-            width: 75px;
+            width: 110px;
         }
         .checkbox-group {
             height: 40px;
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
             font-size: 13px;
             font-weight: bold;
             color: #555;
             cursor: pointer;
             user-select: none;
-            white-space: nowrap;
         }
         .checkbox-group input {
             width: 16px;
@@ -79,142 +77,7 @@
             border-radius: 4px; 
             box-sizing: border-box;
             height: 40px;
+        }
+        input[type="url"] {
             width: 100%;
         }
-        button { 
-            flex-grow: 1;
-            padding: 0 10px; 
-            font-size: 14px; 
-            color: white; 
-            border: none; 
-            border-radius: 4px; 
-            cursor: pointer; 
-            font-weight: bold;
-            height: 40px;
-            white-space: nowrap;
-            transition: background-color 0.2s;
-            min-width: 85px;
-        }
-        .btn-launch { background-color: #007bff; }
-        .btn-launch:hover { background-color: #0056b3; }
-        
-        .btn-pause { background-color: #ffc107; color: #212529; }
-        .btn-pause:hover { background-color: #e0a800; }
-        
-        .btn-resume { background-color: #28a745; }
-        .btn-resume:hover { background-color: #218838; }
-
-        .status-bar { 
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 15px; 
-            background: #e9ecef; 
-            border-radius: 4px; 
-            font-size: 13px;
-            color: #444;
-        }
-        .status-details {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .meta-info {
-            font-size: 11px;
-            color: #666;
-        }
-        .countdown-badge {
-            font-size: 16px;
-            font-weight: bold;
-            color: #dc3545;
-            background: #f8d7da;
-            padding: 2px 8px;
-            border-radius: 4px;
-            border: 1px solid #f5c6cb;
-            min-width: 45px;
-            text-align: center;
-        }
-        .error-msg {
-            color: #721c24;
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-            display: none;
-            font-size: 14px;
-        }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h3>Session Activity Pinger</h3>
-    
-    <div id="popupWarning" class="error-msg">
-        <strong>⚠️ Popup Blocker Detected!</strong> Please look at your browser's address bar and select "Always allow popups" for this file, then try again.
-    </div>
-
-    <div class="control-stack">
-        <div class="input-group url-group">
-            <label for="urlInput">Target URL:</label>
-            <input type="url" id="urlInput" placeholder="https://sjdc.instructure.com/conversations" value="https://sjdc.instructure.com/conversations">
-        </div>
-
-        <div class="sub-row">
-            <div class="input-group timer-group">
-                <label for="minutesInput">Ping Min:</label>
-                <input type="number" id="minutesInput" min="0.1" step="0.1" value="5">
-            </div>
-
-            <label class="checkbox-group">
-                <input type="checkbox" id="randomizeCheck" checked> Randomize
-            </label>
-
-            <div class="input-group duration-group">
-                <label for="durationInput">Time Hrs:</label>
-                <input type="number" id="durationInput" min="0.01" step="0.01" placeholder="∞">
-            </div>
-
-            <button id="startBtn" type="button" class="btn-launch">Launch</button>
-        </div>
-    </div>
-
-    <div class="status-bar">
-        <div class="status-details">
-            <span id="statusText">Status: Idle</span>
-            <span id="metaText" class="meta-info">Started: --  |  Total Pings: 0  |  Duration: 00:00:00</span>
-        </div>
-        <div class="countdown-badge" id="countdownText">--s</div>
-    </div>
-</div>
-
-<script>
-    let targetWindow = null;
-    let countdownInterval = null;
-    let secondsRemaining = 0;
-    let totalSecondsElapsed = 0;
-    let targetUrl = '';
-    let pingCount = 0;
-    let startTimeString = '--';
-    let currentState = 'idle';
-
-    const urlInput = document.getElementById('urlInput');
-    const minutesInput = document.getElementById('minutesInput');
-    const randomizeCheck = document.getElementById('randomizeCheck');
-    const durationInput = document.getElementById('durationInput');
-    const startBtn = document.getElementById('startBtn');
-    const statusText = document.getElementById('statusText');
-    const metaText = document.getElementById('metaText');
-    const countdownText = document.getElementById('countdownText');
-    const popupWarning = document.getElementById('popupWarning');
-
-    function getNextIntervalSeconds() {
-        const baseMinutes = parseFloat(minutesInput.value);
-        const baseSeconds = Math.round(baseMinutes * 60);
-
-        if (!randomizeCheck.checked) {
-            return baseSeconds;
-        }
-
-        const maxOffset
