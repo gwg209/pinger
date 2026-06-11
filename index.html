@@ -11,7 +11,7 @@
             background-color: #f0f0f0; 
         }
         .container { 
-            max-width: 500px; /* Slightly widened to handle the new input cleanly */
+            max-width: 500px; 
             margin: 0 auto; 
             padding: 20px; 
             background: white; 
@@ -31,7 +31,7 @@
         }
         .sub-row {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             align-items: flex-end;
         }
         .input-group { 
@@ -42,22 +42,24 @@
         .url-group {
             width: 100%;
         }
+        /* Specific element widths tailored to labels */
         .timer-group {
-            width: 80px;
+            width: 75px;
         }
         .duration-group {
-            width: 110px;
+            width: 75px;
         }
         .checkbox-group {
             height: 40px;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
             font-size: 13px;
             font-weight: bold;
             color: #555;
             cursor: pointer;
             user-select: none;
+            white-space: nowrap;
         }
         .checkbox-group input {
             width: 16px;
@@ -68,6 +70,7 @@
             font-size: 13px;
             font-weight: bold;
             color: #555;
+            white-space: nowrap;
         }
         input[type="url"], input[type="number"] { 
             padding: 10px; 
@@ -76,13 +79,11 @@
             border-radius: 4px; 
             box-sizing: border-box;
             height: 40px;
-        }
-        input[type="url"] {
             width: 100%;
         }
         button { 
             flex-grow: 1;
-            padding: 0 15px; 
+            padding: 0 10px; 
             font-size: 14px; 
             color: white; 
             border: none; 
@@ -92,8 +93,8 @@
             height: 40px;
             white-space: nowrap;
             transition: background-color 0.2s;
+            min-width: 85px;
         }
-        /* State-based button colors */
         .btn-launch { background-color: #007bff; }
         .btn-launch:hover { background-color: #0056b3; }
         
@@ -162,7 +163,7 @@
 
         <div class="sub-row">
             <div class="input-group timer-group">
-                <label for="minutesInput">Minutes:</label>
+                <label for="minutesInput">Ping Min:</label>
                 <input type="number" id="minutesInput" min="0.1" step="0.1" value="5">
             </div>
 
@@ -171,7 +172,7 @@
             </label>
 
             <div class="input-group duration-group">
-                <label for="durationInput">Duration Hours:</label>
+                <label for="durationInput">Time Hrs:</label>
                 <input type="number" id="durationInput" min="0.01" step="0.01" placeholder="∞">
             </div>
 
@@ -196,8 +197,6 @@
     let targetUrl = '';
     let pingCount = 0;
     let startTimeString = '--';
-    
-    // State machine tracking: 'idle', 'active', 'paused'
     let currentState = 'idle';
 
     const urlInput = document.getElementById('urlInput');
@@ -218,161 +217,4 @@
             return baseSeconds;
         }
 
-        const maxOffset = baseSeconds * 0.5; 
-        const randomOffset = (Math.random() * (maxOffset * 2)) - maxOffset; 
-        
-        return Math.max(1, Math.round(baseSeconds + randomOffset));
-    }
-
-    function formatDuration(totalSecs) {
-        const hrs = Math.floor(totalSecs / 3600);
-        const mins = Math.floor((totalSecs % 3600) / 60);
-        const secs = totalSecs % 60;
-
-        const pad = (num) => String(num).padStart(2, '0');
-        return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
-    }
-
-    function updateMetaDisplay() {
-        metaText.textContent = `Started: ${startTimeString} | Total Pings: ${pingCount} | Duration: ${formatDuration(totalSecondsElapsed)}`;
-    }
-
-    function updateButtonState(state) {
-        currentState = state;
-        startBtn.className = ''; // Reset CSS classes
-        
-        if (state === 'active') {
-            startBtn.textContent = 'Pause';
-            startBtn.classList.add('btn-pause');
-        } else if (state === 'paused') {
-            startBtn.textContent = 'Resume';
-            startBtn.classList.add('btn-resume');
-        } else {
-            startBtn.textContent = 'Launch';
-            startBtn.classList.add('btn-launch');
-        }
-    }
-
-    function handleButtonClick() {
-        if (currentState === 'idle') {
-            startPinger();
-        } else if (currentState === 'active') {
-            pausePinger();
-        } else if (currentState === 'paused') {
-            resumePinger();
-        }
-    }
-
-    function startPinger() {
-        popupWarning.style.display = 'none';
-        
-        targetUrl = urlInput.value.trim();
-        const minutes = parseFloat(minutesInput.value);
-        const durationHours = parseFloat(durationInput.value);
-
-        if (!targetUrl) {
-            alert('Please enter a URL.');
-            return;
-        }
-        if (isNaN(minutes) || minutes <= 0) {
-            alert('Please enter a valid number of minutes.');
-            return;
-        }
-        if (durationInput.value.trim() !== '' && (isNaN(durationHours) || durationHours <= 0)) {
-            alert('Please enter a valid duration layout in hours.');
-            return;
-        }
-
-        if (!/^https?:\/\//i.test(targetUrl)) {
-            targetUrl = 'https://' + targetUrl;
-            urlInput.value = targetUrl;
-        }
-
-        pingCount = 0;
-        totalSecondsElapsed = 0;
-        startTimeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-        targetWindow = window.open(targetUrl, 'activity_ping_window', 'width=1024,height=576');
-
-        if (!targetWindow || targetWindow.closed || typeof targetWindow.closed == 'undefined') {
-            statusText.textContent = "Status: Blocked.";
-            countdownText.textContent = "--s";
-            startTimeString = '--';
-            updateMetaDisplay();
-            popupWarning.style.display = 'block';
-            return;
-        }
-
-        secondsRemaining = getNextIntervalSeconds();
-        statusText.textContent = `Status: Page opened. Next cycle targets ${secondsRemaining}s`;
-        countdownText.textContent = `${secondsRemaining}s`;
-        updateMetaDisplay();
-        
-        updateButtonState('active');
-        runTimerLoop();
-    }
-
-    function pausePinger() {
-        if (countdownInterval) clearInterval(countdownInterval);
-        statusText.textContent = "Status: Paused.";
-        updateButtonState('paused');
-    }
-
-    function resumePinger() {
-        if (!targetWindow || targetWindow.closed) {
-            statusText.textContent = "Status: Target window closed. Restart required.";
-            countdownText.textContent = "--s";
-            updateButtonState('idle');
-            return;
-        }
-        
-        statusText.textContent = `Status: Resumed. Next cycle targets ${secondsRemaining}s`;
-        updateButtonState('active');
-        runTimerLoop();
-    }
-
-    function runTimerLoop() {
-        if (countdownInterval) clearInterval(countdownInterval);
-
-        countdownInterval = setInterval(() => {
-            if (!targetWindow || targetWindow.closed) {
-                statusText.textContent = "Status: Target window closed.";
-                countdownText.textContent = "--s";
-                updateButtonState('idle');
-                clearInterval(countdownInterval);
-                return;
-            }
-
-            // Check if duration ceiling is configured and reached
-            const durationHours = parseFloat(durationInput.value);
-            if (!isNaN(durationHours)) {
-                const maxAllowedSeconds = durationHours * 3600;
-                if (totalSecondsElapsed >= maxAllowedSeconds) {
-                    statusText.textContent = "Status: Duration limit reached. Automatically paused.";
-                    pausePinger();
-                    return;
-                }
-            }
-
-            totalSecondsElapsed++;
-            secondsRemaining--;
-
-            if (secondsRemaining <= 0) {
-                targetWindow.location.href = targetUrl;
-                pingCount++;
-                
-                secondsRemaining = getNextIntervalSeconds();
-                
-                const loopTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                statusText.textContent = `Status: Ping sent at ${loopTimestamp}. Next cycle targets ${secondsRemaining}s`;
-            }
-            
-            countdownText.textContent = `${secondsRemaining}s`;
-            updateMetaDisplay();
-        }, 1000);
-    }
-
-    startBtn.addEventListener('click', handleButtonClick);
-</script>
-</body>
-</html>
+        const maxOffset
